@@ -1,5 +1,7 @@
 from flask import Flask, request, render_template, jsonify
 import database
+import artwork
+import json
 
 app = Flask(__name__)
 
@@ -162,46 +164,61 @@ def read_artworks():
             "error": str(e)
         }), 500
 
-# 버튼 실행 이벤트를 데이터베이스에 기록하는 API
+# 가장 최근 작품 조회
+@app.route("/api/artworks/latest", methods=["GET"])
+def read_latest_artwork():
+    try:
+        artworks = database.get_artworks()
+
+        if not artworks:
+            return jsonify({
+                "message": "저장된 작품이 없습니다."
+            }), 404
+
+        latest = artworks[0]
+
+        # JSON 문자열을 파이썬 데이터로 변환
+        artwork_data = json.loads(latest["artwork_data"])
+
+        return jsonify({
+            "id": latest["id"],
+            "created_at": str(latest["created_at"]),
+            "artwork_data": artwork_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+# 축하 이벤트 실행
 @app.route("/api/triggers", methods=["POST"])
 def create_trigger():
     try:
-        # 클라이언트가 보낸 JSON 데이터 가져오기
         data = request.get_json()
 
-        # 요청 데이터 확인
         if not data:
             return jsonify({"message": "요청 데이터가 없습니다."}), 400
 
-        # 버튼 종류와 실행 상태 가져오기
-        source = data.get("source", "").strip()
-        status = data.get("status", "").strip()
-        artwork_id = data.get("artwork_id")
+        source = data.get("source")
 
-        # 필수 입력값 확인
         if source not in ["physical", "web"]:
-            return jsonify({"message": "올바른 버튼 종류가 아닙니다."}), 400
+            return jsonify({"message": "잘못된 실행 방식입니다."}), 400
 
-        if status not in ["success", "failed"]:
-            return jsonify({"message": "올바른 실행 상태가 아닙니다."}), 400
+                # 축하 이벤트 실행
+        result = artwork.execute_celebration(source)
 
-        # 데이터베이스에 이벤트 기록
-        trigger_id = database.insert_trigger_event(
-            source, status, artwork_id
-        )
+        # 이미 다른 축하 이벤트가 실행 중인 경우
+        if not result["success"] and "message" in result:
+            return jsonify(result), 409
 
-        # 기록 성공 및 이벤트 ID 반환
-        return jsonify({
-            "message": "버튼 이벤트가 기록되었습니다.",
-            "trigger_id": trigger_id
-        }), 201
+        # 그 외 실행 오류
+        if not result["success"]:
+            return jsonify(result), 500
+
+        # 실행 성공
+        return jsonify(result), 201
 
     except Exception as e:
-        # 오류 발생 시 실패 메시지 반환
-        return jsonify({
-            "message": "버튼 이벤트 기록 실패",
-            "error": str(e)
-        }), 500
+        return jsonify({"message": str(e)}), 500
 
 # 저장된 버튼 이벤트 목록을 조회하는 API
 @app.route("/api/triggers", methods=["GET"])
@@ -228,6 +245,47 @@ def read_trigger_events():
             "message": "버튼 이벤트 조회 실패",
             "error": str(e)
         }), 500
+
+# 가장 최근 버튼 이벤트를 조회하는 API
+@app.route("/api/triggers/latest", methods=["GET"])
+def read_latest_trigger():
+    try:
+        # 데이터베이스에서 버튼 이벤트 목록 가져오기
+        events = database.get_trigger_events()
+
+        # 저장된 이벤트가 없는 경우
+        if not events:
+            return jsonify({
+                "message": "저장된 버튼 이벤트가 없습니다."
+            }), 404
+
+        # 가장 최근 이벤트 선택
+        latest = max(events, key=lambda event: event["id"])
+
+        # 날짜 데이터를 문자열로 변환
+        latest["triggered_at"] = latest["triggered_at"].strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        return jsonify({
+            "message": "최신 버튼 이벤트 조회 성공",
+            "event": latest
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "message": "최신 버튼 이벤트 조회 실패",
+            "error": str(e)
+        }), 500
+
+@app.route("/display")
+def display():
+    return render_template("display.html")
+
+
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

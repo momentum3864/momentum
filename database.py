@@ -169,3 +169,100 @@ def get_trigger_events():
     finally:
         cursor.close()
         db.close()
+
+# 현재 실행 중인 축하 이벤트가 있는지 확인하는 함수
+def is_celebration_running():
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        sql = """
+            SELECT COUNT(*)
+            FROM trigger_events
+            WHERE status = 'running'
+        """
+
+        cursor.execute(sql)
+        result = cursor.fetchone()
+
+        return result[0] > 0
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+# 축하 이벤트 실행 상태를 등록하는 함수
+def start_celebration(source):
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        # 이미 실행 중인 이벤트가 있는지 확인
+        cursor.execute("""
+            SELECT id
+            FROM trigger_events
+            WHERE status = 'running'
+            LIMIT 1
+            FOR UPDATE
+        """)
+
+        if cursor.fetchone():
+            db.rollback()
+            return None
+
+        # 실행 중 상태 등록
+        cursor.execute("""
+            INSERT INTO trigger_events (source, status)
+            VALUES (%s, 'running')
+        """, (source,))
+
+        db.commit()
+
+        return cursor.lastrowid
+
+    finally:
+        cursor.close()
+        db.close()
+
+# 축하 이벤트 실행 잠금을 획득하는 함수
+def acquire_celebration_lock():
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT GET_LOCK('momentum_celebration', 0)"
+        )
+
+        result = cursor.fetchone()
+
+        if result[0] == 1:
+            return db
+
+        db.close()
+        return None
+
+    except Exception:
+        db.close()
+        raise
+
+    finally:
+        cursor.close()
+
+
+# 축하 이벤트 실행 잠금을 해제하는 함수
+def release_celebration_lock(db):
+    cursor = db.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT RELEASE_LOCK('momentum_celebration')"
+        )
+
+        # MySQL 조회 결과 읽기
+        cursor.fetchone()
+
+    finally:
+        cursor.close()
+        db.close()

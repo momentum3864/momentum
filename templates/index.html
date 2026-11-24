@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOMENTUM · 축하 메시지</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-guest">
+  <main class="guest">
+    <header class="guest-header">
+      <p class="eyebrow">MOMENTUM</p>
+      <h1>축하의 마음을<br>남겨 주세요</h1>
+      <p class="lede">
+        여러분의 메시지가 모여<br>
+        오늘의 순간을 하나의 작품으로 피워냅니다.
+      </p>
+    </header>
+
+    <form id="message-form" class="card" novalidate>
+      <label class="field">
+        <span class="field-label">이름</span>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          maxlength="50"
+          autocomplete="name"
+          placeholder="예: 신랑 친구 민수"
+          required
+        >
+      </label>
+
+      <label class="field">
+        <span class="field-label">
+          축하 메시지
+          <span class="counter">
+            <span id="content-count">0</span>/200
+          </span>
+        </span>
+        <textarea
+          id="content"
+          name="content"
+          rows="5"
+          maxlength="200"
+          placeholder="두 분의 앞날을 진심으로 축하해요!"
+          required
+        ></textarea>
+      </label>
+
+      <p id="form-error" class="form-error" role="alert" hidden></p>
+
+      <button
+        id="submit-btn"
+        type="submit"
+        class="btn btn-primary btn-block"
+      >
+        메시지 보내기
+      </button>
+    </form>
+
+    <section id="sent" class="card sent" hidden>
+      <div class="sent-bloom" aria-hidden="true"></div>
+      <h2>마음이 전해졌어요</h2>
+      <p>
+        잠시 후 큰 화면에서<br>
+        여러분의 메시지가 꽃으로 피어납니다.
+      </p>
+      <button id="write-again" type="button" class="btn btn-ghost">
+        한 번 더 쓰기
+      </button>
+    </section>
+
+    <footer class="guest-footer">
+      <a href="/display?artwork=latest">완성된 작품 보기 →</a>
+    </footer>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    MOMENTUM.initGuestPage();
+  </script>
+</body>
+</html>

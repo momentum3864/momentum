@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOMENTUM · Display</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-display">
+
+  <!-- 작품이 그려지는 캔버스 -->
+  <canvas id="stage"></canvas>
+
+  <!-- 대기 화면 -->
+  <div id="idle-overlay" class="overlay idle-overlay">
+    <p class="eyebrow">MOMENTUM</p>
+    <p class="idle-count">
+      <span id="message-count">0</span>
+    </p>
+    <p class="idle-label">개의 축하가 모였어요</p>
+    <p class="idle-hint">버튼을 누르면 작품이 시작됩니다</p>
+  </div>
+
+  <!-- 완성 후 메시지 표시 -->
+  <div id="caption" class="caption" hidden>
+    <p id="caption-content" class="caption-content"></p>
+    <p id="caption-name" class="caption-name"></p>
+  </div>
+
+  <!-- 작품 완성 제목 -->
+  <div id="done-title" class="done-title" hidden>
+    <p class="eyebrow">MOMENTUM</p>
+    <p id="done-text"></p>
+  </div>
+
+  <p id="status" class="display-status" aria-live="polite"></p>
+
+  <!-- main.js에서 공통 기능 정의 -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <!-- animation.js에서 Stage 클래스 정의 -->
+  <script src="{{ url_for('static', filename='js/animation.js') }}"></script>
+
+  <!-- 두 스크립트가 모두 로드된 뒤 초기화 -->
+  <script>
+    MOMENTUM.initDisplayPage();
+  </script>
+</body>
+</html>
